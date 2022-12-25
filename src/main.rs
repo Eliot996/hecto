@@ -16,10 +16,8 @@ fn main() {
                     println!("{:?} ({})\r", c as u8, c);
                 }
                }
-               Key::Ctrl('q') => {
-                    break;
-               }
-               _ => {} 
+               Key::Ctrl('q') => break,
+               _ => println!("{:?}\r", key)
             }           
             Err(e) => die(e),
         }
