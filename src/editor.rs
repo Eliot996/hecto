@@ -1,33 +1,64 @@
-use std::io::{self, stdout};
+#![warn(clippy::all, clippy::pedantic)]
+
+use std::io::{self, stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-pub struct Editor {}
+pub struct Editor {
+    should_quit: bool
+}
 
 impl Editor {
-    pub fn run(&self) {
+    pub fn run(&mut self) {
         let _stdout = stdout().into_raw_mode().unwrap();
 
-        for key in io::stdin().keys() {
-            match key {
-                Ok(key) => match key {
-                    Key::Char(c) => {
-                        if c.is_control() {
-                            println!("{:?} \r", c as u8)
-                        } else {
-                            println!("{:?} ({})\r", c as u8, c);
-                        }
-                    }
-                    Key::Ctrl('q') => break,
-                    _ => println!("{:?}\r", key),
-                },
-                Err(e) => die(e),
+        loop {
+            if let Err(error) = self.refresh_screen() {
+                die(&error);
+            }
+            if self.should_quit {
+                break;
+            }
+            if let Err(error) = self.process_keypress() {
+                die(&error);
+            }
+        }
+    }
+
+    pub fn default() -> Self {
+        Editor {should_quit: false}
+    }
+
+    fn refresh_screen(&self) -> Result<(), std::io::Error>{
+        print!("{}{}", termion::clear::All, termion::cursor::Goto(1,1));
+        
+        if self.should_quit {
+            print!("Goodbye.\r");
+        }
+
+        io::stdout().flush()
+    }
+
+    fn process_keypress(&mut self) -> Result<(), std::io::Error> {
+        let pressed_key = Self::read_key()?;
+        match pressed_key {
+            Key::Ctrl('q') => self.should_quit = true,
+            _ => (),
+        }
+        Ok(())
+    }
+
+    fn read_key() -> Result<Key, std::io::Error> {
+        loop {
+            if let Some(key) = io::stdin().lock().keys().next() {
+                return key;
             }
         }
     }
 }
 
-fn die(e: std::io::Error) {
+fn die(e: &std::io::Error) {
+    print!("{}", termion::clear::All);
     panic!("{}", e)
 }
