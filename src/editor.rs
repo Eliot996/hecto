@@ -1,12 +1,14 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+use crate::Terminal;
 use std::io::{self, stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
 pub struct Editor {
-    should_quit: bool
+    should_quit: bool,
+    terminal: Terminal,
 }
 
 impl Editor {
@@ -27,18 +29,21 @@ impl Editor {
     }
 
     pub fn default() -> Self {
-        Editor {should_quit: false}
+        Editor {
+            should_quit: false,
+            terminal: Terminal::default().expect("Failed to initiate terminal"),
+        }
     }
 
-    fn refresh_screen(&self) -> Result<(), std::io::Error>{
-        print!("{}{}", termion::clear::All, termion::cursor::Goto(1,1));
-        
+    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+        print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+
         if self.should_quit {
             print!("Goodbye.\r");
         } else {
-           self.draw_rows();
-           
-           print!("{}", termion::cursor::Goto(1,1))
+            self.draw_rows();
+
+            print!("{}", termion::cursor::Goto(1, 1))
         }
 
         io::stdout().flush()
@@ -62,13 +67,7 @@ impl Editor {
     }
 
     fn draw_rows(&self) {
-        let mut height = 24;
-        
-        if let Ok(size) = termion::terminal_size() {
-            height = size.1;
-        }
-
-        for _ in 0..height - 1 {
+        for _ in 0..self.terminal.size().height {
             println!("~\r")
         }
     }
