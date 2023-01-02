@@ -35,6 +35,10 @@ impl Editor {
         
         if self.should_quit {
             print!("Goodbye.\r");
+        } else {
+           self.draw_rows();
+           
+           print!("{}", termion::cursor::Goto(1,1))
         }
 
         io::stdout().flush()
@@ -54,6 +58,18 @@ impl Editor {
             if let Some(key) = io::stdin().lock().keys().next() {
                 return key;
             }
+        }
+    }
+
+    fn draw_rows(&self) {
+        let mut height = 24;
+        
+        if let Ok(size) = termion::terminal_size() {
+            height = size.1;
+        }
+
+        for _ in 0..height - 1 {
+            println!("~\r")
         }
     }
 }
