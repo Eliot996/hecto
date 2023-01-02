@@ -43,7 +43,7 @@ impl Editor {
         } else {
             self.draw_rows();
 
-            print!("{}", termion::cursor::Goto(1, 1))
+            print!("{}", termion::cursor::Goto(1, 1));
         }
 
         io::stdout().flush()
@@ -68,7 +68,7 @@ impl Editor {
 
     fn draw_rows(&self) {
         for _ in 0..self.terminal.size().height {
-            println!("~\r")
+            println!("~\r");
         }
     }
 }
