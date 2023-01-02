@@ -52,4 +52,12 @@ impl Terminal {
             }
         }
     }
+
+    pub fn cursor_hide() {
+        print!("{}", termion::cursor::Hide)
+    }
+
+    pub fn cursor_show() {
+        print!("{}", termion::cursor::Show)
+    }
 }
