@@ -1,11 +1,13 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use crate::Terminal;
 use crate::Document;
+use crate::Row;
+use crate::Terminal;
 use termion::event::Key;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Default)]
 pub struct Position {
     pub x: u32,
     pub y: u32,
@@ -37,14 +39,14 @@ impl Editor {
         Editor {
             should_quit: false,
             terminal: Terminal::default().expect("Failed to initiate terminal"),
-            cursor_position: Position { x: 0, y: 0 },
-            document: Document::default(),
+            cursor_position: Position::default(),
+            document: Document::open(),
         }
     }
 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
-        Terminal::cursor_position(&Position { x: 0, y: 0 });
+        Terminal::cursor_position(&Position::default());
 
         if self.should_quit {
             Terminal::clear_screen();
@@ -79,20 +81,20 @@ impl Editor {
         let Position { mut x, mut y } = &self.cursor_position;
 
         let size = self.terminal.size();
-        let height = size.height.saturating_sub(1) as u32;
-        let width = size.width.saturating_sub(1) as u32;
+        let height = u32::from(size.height.saturating_sub(1));
+        let width = u32::from(size.width.saturating_sub(1));
 
         match key {
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
                 if y < height {
-                    y = y.saturating_add(1)
+                    y = y.saturating_add(1);
                 }
             }
             Key::Left => x = x.saturating_sub(1),
             Key::Right => {
                 if x < width {
-                    x = x.saturating_add(1)
+                    x = x.saturating_add(1);
                 }
             }
             Key::Home => x = 0,
@@ -119,13 +121,22 @@ impl Editor {
         println!("{}\r", &welcome_message);
     }
 
+    pub fn draw_row(&self, row: &Row) {
+        let start = 0;
+        let end = self.terminal.size().width as usize;
+        let row = row.render(start, end);
+        println!("{row}\r");
+    }
+
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
 
-        for row in 0..height - 1 {
+        for terminal_row in 0..height - 1 {
             Terminal::clear_current_line();
 
-            if row == height / 3 {
+            if let Some(row) = self.document.row(terminal_row as usize) {
+                self.draw_row(row);
+            } else if terminal_row == height / 3 {
                 self.draw_welcome_message();
             } else {
                 println!("~\r");
